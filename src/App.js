@@ -1,21 +1,28 @@
-import logo from './logo.svg';
 import './App.css';
+import { DEPLOYMENT } from './config';
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Edit <code>src/App.js</code> and save to reload.
+          This is the Capstone Project for Cloud Devops Nanodegree
         </p>
+        {
+          DEPLOYMENT && <p>
+            Deployment: <span style={{
+              color: DEPLOYMENT,
+              textTransform: 'capitalize'
+            }}>{DEPLOYMENT}</span>
+          </p>
+        }
         <a
           className="App-link"
-          href="https://reactjs.org"
+          href="https://github.com/m-ahmedy/cloud-devops-capstone"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Learn React
+          Go to Capstone Repo
         </a>
       </header>
     </div>
