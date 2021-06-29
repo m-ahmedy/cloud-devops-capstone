@@ -1,5 +1,14 @@
 version: 2.1
 
+commands:
+  update-kubeconfig:
+    description: Update Kubernetes configuration with the cluster
+    steps:
+      - run:
+          name: Update Kubernetes config
+          command: |
+            aws eks --region ${AWS_DEFAULT_REGION} update-kubeconfig --name ${CLUSTER_NAME}
+
 jobs:
     pre-build:
         docker:
@@ -40,10 +49,35 @@ jobs:
                   echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
                   docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}
 
+    deploy:
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - update-kubeconfig
+        - run:
+            name: Deploy Blue containers
+            command: |
+              kubectl apply -f .circleci/k8s/blue-controller.yaml
+        - run:
+            name: Deploy Green containers
+            command: |
+              kubectl apply -f .circleci/k8s/green-controller.yaml
+        - run:
+            name: Create the service, redirected to Blue containers
+            command: |
+              kubectl apply -f .circleci/k8s/blue-service.yaml
+   
 workflows:
   default:
     jobs:
-      - pre-build
+      - pre-build:
+          filters:
+            branches:
+              ignore: infrastructure
       - build:
           requires:
             - pre-build
+      - deploy:
+          requires:
+            - build
