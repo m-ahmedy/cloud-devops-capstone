@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: green
-        image: mahmoud1ahmedy/cloud-devops-capstone
+        image: mahmoud1ahmedy/cloud-devops-capstone:latest
         ports:
         - name: http-server
           containerPort: 80

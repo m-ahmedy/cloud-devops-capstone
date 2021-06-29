@@ -1,5 +1,4 @@
 import './App.css';
-import { DEPLOYMENT } from './config';
 
 function App() {
   return (
@@ -8,14 +7,6 @@ function App() {
         <p>
           This is the Capstone Project for Cloud Devops Nanodegree
         </p>
-        {
-          DEPLOYMENT && <p>
-            Deployment: <span style={{
-              color: DEPLOYMENT,
-              textTransform: 'capitalize'
-            }}>{DEPLOYMENT}</span>
-          </p>
-        }
         <a
           className="App-link"
           href="https://github.com/m-ahmedy/cloud-devops-capstone"

@@ -9,6 +9,9 @@ commands:
           command: |
             aws eks --region ${AWS_DEFAULT_REGION} update-kubeconfig --name ${CLUSTER_NAME}
 
+orbs:
+  kubernetes: circleci/kubernetes@0.12.0
+
 jobs:
     pre-build:
         docker:
@@ -48,6 +51,37 @@ jobs:
                   docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_NAME} .
                   echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
                   docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}
+    deploy:
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - kubernetes/install-kubectl
+        - update-kubeconfig
+        - run:
+            name: Deploy Blue containers
+            command: |
+              kubectl apply -f .circleci/k8s/blue-controller.yaml
+        - run:
+            name: Deploy Green containers
+            command: |
+              kubectl apply -f .circleci/k8s/green-controller.yaml
+        - run:
+            name: Create the service, redirected to Blue containers
+            command: |
+              kubectl apply -f .circleci/k8s/blue-service.yaml
+
+    deploy-green:
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - kubernetes/install-kubectl
+        - update-kubeconfig
+        - run:
+            name: Redirect the service to Green containers
+            command: |
+              kubectl apply -f .circleci/k8s/green-service.yaml
 
 # Infrastructure jobs
     create-cluster:
@@ -94,7 +128,17 @@ workflows:
       - pre-build:
           filters:
             branches:
-              only: master 
+              ignore: infrastructure
       - build:
           requires:
             - pre-build
+      - deploy:
+          requires:
+            - build
+      - green-switch-approval:
+          type: approval
+          requires:
+            - deploy
+      - deploy-green:
+          requires:
+            - green-switch-approval

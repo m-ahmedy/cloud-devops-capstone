@@ -9,8 +9,7 @@ COPY package-lock.json ./
 
 RUN npm ci
 COPY . ./
-ARG DEPLOYMENT=blue
-RUN REACT_APP_DEPLOYMENT=$DEPLOYMENT npm run build
+RUN npm run build
 
 # production environment
 FROM nginx:stable-alpine
