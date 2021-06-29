@@ -71,7 +71,19 @@ jobs:
             name: Create the service, redirected to Blue containers
             command: |
               kubectl apply -f .circleci/k8s/blue-service.yaml
-   
+
+    deploy-green:
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - kubernetes/install-kubectl
+        - update-kubeconfig
+        - run:
+            name: Redirect the service to Green containers
+            command: |
+              kubectl apply -f .circleci/k8s/green-service.yaml
+
 workflows:
   default:
     jobs:
@@ -85,3 +97,10 @@ workflows:
       - deploy:
           requires:
             - build
+      - green-switch-approval:
+          type: approval
+          requires:
+            - deploy
+      - deploy-green:
+          requires:
+            - green-switch-approval
