@@ -1,5 +1,14 @@
 version: 2.1
 
+commands:
+  update-kubeconfig:
+    description: Update Kubernetes configuration with the cluster
+    steps:
+      - run:
+          name: Update Kubernetes config
+          command: |
+            aws eks --region ${AWS_DEFAULT_REGION} update-kubeconfig --name ${CLUSTER_NAME}
+
 jobs:
     pre-build:
         docker:
@@ -40,10 +49,52 @@ jobs:
                   echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
                   docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}
 
+# Infrastructure jobs
+    create-cluster:
+      docker:
+        - image: python:3.7-alpine
+      steps:
+        - checkout
+        - run:
+            name: Install dependencies
+            command: |
+              apk add --update tar gzip curl
+              pip install awscli
+        - run:
+            name: Install eksctl
+            command: |
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+              mv /tmp/eksctl /usr/local/bin
+              eksctl version
+        - run:
+            name: Create EKS cluster
+            command: |
+              eksctl create cluster \
+                --name ${CLUSTER_NAME} \
+                --version 1.19 \
+                --managed \
+                --nodegroup-name standard-workers \
+                --node-type t2.small \
+                --nodes 2 \
+                --nodes-min 1 \
+                --nodes-max 3 \
+                --region ${AWS_DEFAULT_REGION}
+        - update-kubeconfig
+
 workflows:
+  infrasructure:
+    jobs:
+      - create-cluster:
+          filters:
+            branches:
+              only: infrastructure
+
   default:
     jobs:
-      - pre-build
+      - pre-build:
+          filters:
+            branches:
+              only: master 
       - build:
           requires:
             - pre-build
