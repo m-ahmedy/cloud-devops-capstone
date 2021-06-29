@@ -9,6 +9,9 @@ commands:
           command: |
             aws eks --region ${AWS_DEFAULT_REGION} update-kubeconfig --name ${CLUSTER_NAME}
 
+orbs:
+  kubernetes: circleci/kubernetes@0.12.0
+
 jobs:
     pre-build:
         docker:
@@ -54,6 +57,7 @@ jobs:
         - image: amazon/aws-cli
       steps:
         - checkout
+        - kubernetes/install-kubectl
         - update-kubeconfig
         - run:
             name: Deploy Blue containers
