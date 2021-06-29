@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-    build:
+    pre-build:
         docker:
             - image: circleci/node:lts-stretch
         steps:
@@ -26,7 +26,24 @@ jobs:
                 command: |
                   make test
 
+    build:
+        docker:
+            - image: circleci/python:3.7-stretch
+        steps:
+            - checkout
+            - setup_remote_docker:
+                version: 19.03.13
+            - run:
+                name: Build and push docker image
+                command: |
+                  docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_NAME} .
+                  echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
+                  docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}
+
 workflows:
   default:
     jobs:
-      - build
+      - pre-build
+      - build:
+          requires:
+            - pre-build
