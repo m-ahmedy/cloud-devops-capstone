@@ -1,0 +1,32 @@
+version: 2.1
+
+jobs:
+    build:
+        docker:
+            - image: circleci/node:lts-stretch
+        steps:
+            - checkout
+            - restore_cache:
+                  keys: 
+                    - frontend-deps-{{ checksum "package.json" }}
+                    - frontend-deps-
+            - run:
+                name: Install dependencies
+                command: |
+                  make install
+                  # Install hadolint
+                  wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
+                  chmod +x /bin/hadolint
+            - run:
+                name: Run lint checks
+                command: |
+                  make lint
+            - run:
+                name: Run unit tests
+                command: |
+                  make test
+
+workflows:
+  default:
+    jobs:
+      - build
