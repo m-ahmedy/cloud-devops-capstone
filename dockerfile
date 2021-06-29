@@ -11,8 +11,6 @@ RUN npm ci
 COPY . ./
 RUN npm run build
 
-hello world
-
 # production environment
 FROM nginx:stable-alpine
 COPY --from=build /app/build /usr/share/nginx/html
